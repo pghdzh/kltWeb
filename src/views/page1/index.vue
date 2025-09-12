@@ -1,7 +1,15 @@
 <template>
     <main class="home">
 
-
+        <!-- 背景轮播放在最底层 -->
+        <div class="carousel carousel1">
+            <img v-for="(src, idx) in randomFive" :key="idx" :src="src" class="carousel-image"
+                :class="{ active: idx === currentIndex }" />
+        </div>
+        <div class="carousel carousel2">
+            <img v-for="(src, idx) in randomFive2" :key="idx" :src="src" class="carousel-image"
+                :class="{ active: idx === currentIndex }" />
+        </div>
         <section class="center" role="main">
             <h1 class="title">生死相随 · 珂莱塔</h1>
 
@@ -13,7 +21,7 @@
 
         <footer class="site-footer" role="contentinfo">
             <div class="foot-inner">
-                <div class="left">© 珂莱塔设定集 · 非商业同人</div>
+                <div class="left">© 珂莱塔设定集</div>
                 <div class="right">设计：霜落天亦 · 2025</div>
             </div>
         </footer>
@@ -69,14 +77,43 @@ function tick() {
 
 
 
+// 1. 全量导入横图，直接映射成 string[]
+const modules = import.meta.glob("@/assets/images1/*.{jpg,png,jpeg,webp}", {
+    eager: true,
+});
+const allSrcs: string[] = Object.values(modules).map((mod: any) => mod.default);
+
+// 1. 全量导入竖图，直接映射成 string[]
+const modules2 = import.meta.glob("@/assets/images2/*.{jpg,png,jpeg,webp}", {
+    eager: true,
+});
+const allSrcs2: string[] = Object.values(modules2).map((mod: any) => mod.default);
+
+// 2. 洗牌并取 5 张
+function shuffle<T>(arr: T[]): T[] {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+const randomFive = ref<string[]>(shuffle(allSrcs).slice(0, 5));
+const randomFive2 = ref<string[]>(shuffle(allSrcs2).slice(0, 5));
+
+const currentIndex = ref(0);
+let Imgtimer: number;
+
 
 onMounted(() => {
     timer = window.setTimeout(tick, 500);
-
+    Imgtimer = window.setInterval(() => {
+        currentIndex.value = (currentIndex.value + 1) % 5;
+    }, 5000);
 });
 
 onBeforeUnmount(() => {
-
+    clearInterval(Imgtimer);
     if (timer) window.clearTimeout(timer);
 });
 
@@ -100,6 +137,40 @@ $text: #eef6fb;
     color: $text;
     font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'PingFang SC', 'Noto Sans CJK SC', sans-serif;
 
+    .carousel {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+
+        &::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .carousel-image {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 1s ease;
+            filter: blur(1px);
+
+            &.active {
+                opacity: 1;
+            }
+        }
+    }
+
+
+    .carousel2 {
+        display: none;
+    }
 
 }
 
@@ -136,7 +207,7 @@ $text: #eef6fb;
         align-items: center;
         justify-content: center;
         gap: 8px;
-
+        z-index: 9;
         .typed {
             display: inline-block;
             white-space: nowrap;
@@ -162,7 +233,7 @@ $text: #eef6fb;
     border-top: 1px solid rgba(255, 255, 255, 0.04);
     background: linear-gradient(180deg, rgba(7, 10, 18, 0.6), rgba(4, 6, 10, 0.8));
     padding: 14px 18px;
-
+    z-index: 9;
     .foot-inner {
         max-width: 1100px;
         margin: 0 auto;
@@ -199,6 +270,16 @@ $text: #eef6fb;
 }
 
 @media (max-width: 720px) {
+    .home {
+        .carousel1 {
+            display: none;
+        }
+
+        .carousel2 {
+            display: block;
+        }
+    }
+
     .center {
         padding: 20px 14px;
 

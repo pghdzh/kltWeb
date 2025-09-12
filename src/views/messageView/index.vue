@@ -4,7 +4,7 @@
     <!-- 半透明顶部标题 -->
     <header class="board-header" role="banner">
       <div class="title-wrap">
-        <h1>惠惠の小屋</h1>
+        <h1>留言板</h1>
         <p class="subtitle">静静地说一句：欢迎来访</p>
       </div>
     </header>
@@ -50,7 +50,7 @@
       <input id="mb-name" v-model="name" type="text" placeholder="你的昵称" @keydown.enter.prevent />
 
       <label class="sr-only" for="mb-content">留言内容</label>
-      <textarea id="mb-content" v-model="content" placeholder="写下你的留言...（按 Ctrl+Enter 发送）"
+      <textarea id="mb-content" v-model="content" placeholder="写下你的留言..."
         @keydown.ctrl.enter.prevent="submitMessage" @input="autoGrow" ref="textareaRef" />
 
       <div class="form-row">
