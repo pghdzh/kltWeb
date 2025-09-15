@@ -70,6 +70,7 @@ const links = [
   { name: "寄语心声", path: "/message" },
   { name: "水晶画廊", path: "/gallery" },
   { name: "i珂TV", path: "/resources" },
+  { name: "小游戏", path: "/game" },
 ];
 
 const handleScroll = () => {
@@ -281,7 +282,7 @@ $text-soft: #f6f8fb;
     border: 1px solid rgba(255, 255, 255, 0.02);
     align-items: center;
     justify-content: center;
-   
+
     cursor: pointer;
     transition: background 0.18s;
 

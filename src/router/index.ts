@@ -10,7 +10,7 @@ const router = createRouter({
       path: "/",
       component: () => import("@/views/page1/index.vue"),
     },
-     {
+    {
       path: "/timeLine",
       component: () => import("@/views/timeLine/index.vue"),
     },
@@ -25,6 +25,10 @@ const router = createRouter({
     {
       path: "/resources",
       component: () => import("@/views/resourcesView/index.vue"),
+    },
+    {
+      path: "/game",
+      component: () => import("@/views/gameView/index.vue"),
     },
   ],
   scrollBehavior() {
