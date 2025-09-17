@@ -1030,8 +1030,7 @@ $neon-pink: #ff66c4;
       text-align: center;
 
       strong {
-        color: $ice-blue;
-        text-shadow: 0 0 6px rgba($ice-blue, 0.45);
+        color: $neon-pink;
       }
     }
 

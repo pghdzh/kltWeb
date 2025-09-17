@@ -3,17 +3,38 @@
     <header class="hud">
       <div class="hud__left">
         <div class="score">得分：<span class="score__num">{{ score }}</span></div>
-        <div class="combo" v-if="combo > 1">连击 ×{{ combo }}</div>
+        <div class="combo" v-if="combo > 1 && !isMobile">连击 ×{{ combo }}</div>
       </div>
       <div class="hud__center">
-        <div class="timer">时间：<span class="timer__num">{{ timeLeft }}</span>s</div>
+        <div class="timer">时间：<span class="timer__num">{{ timeLeft.toFixed(2) }}</span>s</div>
       </div>
-      <div class="hud__right">
-        <button class="btn" @click="startGame" v-if="!running && !finished">开始</button>
-        <button class="btn ghost" @click="restart" v-if="finished || running">重玩</button>
-      </div>
+      <button class="btn leaderboard-btn" @click="openLeaderboard">排行榜</button>
     </header>
+    <div v-if="showLeaderboard" class="lb-overlay" @click.self="closeLeaderboard"
+      @keydown.esc.prevent="closeLeaderboard" tabindex="-1" ref="lbOverlayRef">
+      <div class="lb-card" role="dialog" aria-modal="true" aria-label="排行榜">
+        <header class="lb-card__hd">
+          <h3>排行榜（Top 99）</h3>
+          <button class="lb-close" @click="closeLeaderboard" aria-label="关闭">✕</button>
+        </header>
 
+        <section class="lb-card__body">
+          <div class="lb-loading" v-if="loadingLeaderboard">加载中…</div>
+
+          <ol class="lb-list" v-else>
+            <li v-if="!rankingList || rankingList.length === 0" class="lb-empty">暂无榜单数据</li>
+
+            <li v-for="(it, idx) in rankingList" :key="it.date || (it.score + '-' + idx)" class="lb-item">
+              <div class="rank">{{ idx + 1 }}</div>
+              <div class="info">
+                <div class="name">{{ it.nickname || '匿名' }}</div>
+              </div>
+              <div class="score">{{ it.count }}</div>
+            </li>
+          </ol>
+        </section>
+      </div>
+    </div>
     <div class="game-area" ref="containerRef">
       <canvas ref="canvasRef" @pointerdown.prevent="onPointerDown"></canvas>
 
@@ -22,8 +43,6 @@
         <button class="ctrl left" @pointerdown.prevent="onMoveDown('left')" @pointerup="onMoveUp"
           @pointercancel="onMoveUp" @touchstart.prevent="onMoveDown('left')" @touchend="onMoveUp">◀</button>
 
-        <!-- 射击已改为自动发射（去掉手动射击按钮） -->
-
         <button class="ctrl right" @pointerdown.prevent="onMoveDown('right')" @pointerup="onMoveUp"
           @pointercancel="onMoveUp" @touchstart.prevent="onMoveDown('right')" @touchend="onMoveUp">▶</button>
       </div>
@@ -31,7 +50,7 @@
       <div class="overlay" v-if="!running && !finished">
         <div class="overlay__card">
           <h2>晶斩 — 珂莱塔的试练</h2>
-          <p>控制珂莱塔左右移动，自动发射晶弹；子弹命中晶体后破碎。击中金色晶体会触发彩蛋语音（若已放置）。</p>
+          <p>控制珂莱塔左右移动，自动发射晶弹；子弹命中晶体后破碎。击中晶体会有概率触发彩蛋语音。</p>
           <button class="btn primary" @click="startGame">开始挑战</button>
         </div>
       </div>
@@ -40,38 +59,175 @@
         <div class="overlay__card">
           <h2>时间到</h2>
           <p>得分：<strong>{{ score }}</strong></p>
-          <p v-if="score >= EASTER_EGG_SCORE">已触发彩蛋</p>
+          <!-- 新增：昵称输入 + 上传分数 -->
+          <div class="submit-row">
+            <label class="label">昵称</label>
+            <input class="nickname-input" v-model="submitNickname" type="text" placeholder="输入你的昵称（最多50字）"
+              maxlength="50" />
+            <button class="btn primary" :disabled="submitting || submitted" @click="submitScore">
+              <span v-if="!submitting && !submitted">上传分数</span>
+              <span v-if="submitting">上传中…</span>
+              <span v-if="!submitting && submitted">已上传</span>
+            </button>
+          </div>
+
+
+
+          <div class="submit-msg" v-if="submitMsg" :class="{ error: submitError }">
+            {{ submitMsg }}
+          </div>
           <div class="actions">
             <button class="btn" @click="restart">再来一次</button>
           </div>
 
-          <div class="leaderboard" v-if="leaderboard.length">
-            <h3>本地排行榜（Top 10）</h3>
-            <ol>
-              <li v-for="(it, idx) in leaderboard" :key="it.date">
-                <span class="rank">{{ idx + 1 }}.</span>
-                <span class="score">{{ it.score }}</span>
-                <span class="meta">{{ it.time }}</span>
-              </li>
-            </ol>
-          </div>
         </div>
       </div>
 
-      <div class="mobile-tip" v-if="isMobile && running">使用左右按钮移动，珂莱塔会自动开火</div>
+      <!-- <div class="mobile-tip" v-if="isMobile && running">使用左右按钮移动，珂莱塔会自动开火</div> -->
     </div>
 
-    <footer class="game-footer">
+    <!-- <footer class="game-footer">
       <div>提示：将珂莱塔语音放到 <code>/assets/voice/carlotta_easter.mp3</code>；命中音效放到 <code>/assets/sfx/</code>（可选）。人物贴图放到
         <code>/assets/player.png</code>（public 下）。
       </div>
-    </footer>
+    </footer> -->
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
+import { getRankingList, addRankingItem } from "@/api/modules/ranking"; // 根据你的实际路径调整
+// 排行榜弹窗
+const showLeaderboard = ref(false);
+const loadingLeaderboard = ref(false);
+const lbOverlayRef = ref<HTMLElement | null>(null);
 
+interface RankingItem {
+  id?: number; // 如果接口返回有 id，可加上
+  nickname: string;
+  count: number;
+}
+const rankingList = ref<RankingItem[]>([]);
+
+/**
+ * 打开排行榜：同时尝试从后端拉取最新 top
+ */
+// 默认分页参数（如不分页可省略）
+const page = 1;
+const pageSize = 99;
+
+const fetchRanking = async () => {
+  const res = await getRankingList({ page, pageSize, character_key: "kltGame" });
+  if (res.success) {
+    rankingList.value = res.data;
+  } else {
+    console.error("获取排行榜失败", res.message);
+  }
+};
+
+
+async function openLeaderboard() {
+  showLeaderboard.value = true;
+  loadingLeaderboard.value = true;
+
+  // 小技巧：把焦点移到 overlay，便于监听 Esc 关闭
+  await nextTick();
+  try { lbOverlayRef.value && lbOverlayRef.value.focus(); } catch (e) { }
+
+  // 尝试拉取服务器榜单（可选），若失败则保持原本 local 数据
+  try {
+    await fetchRanking();
+  } catch (e) {
+    console.warn('拉取排行榜失败', e);
+  } finally {
+    loadingLeaderboard.value = false;
+  }
+}
+
+function closeLeaderboard() {
+  showLeaderboard.value = false;
+}
+
+/* ===================== 上传分数 ===================== */
+// 可修改的角色键（请按实际项目替换）
+const CHARACTER_KEY = 'kltGame';
+
+// 提交相关状态
+const submitNickname = ref('');
+const submitting = ref(false);
+const submitted = ref(false);
+const submitMsg = ref('');
+const submitError = ref(false);
+
+// 复用或创建 leaderboard ref（如果你的组件里已有 leaderboard 请确保该变量名不冲突）
+let leaderboard: any;
+try {
+  // 尝试复用全局挂载的 leaderboard（若你之前用过）
+  if ((globalThis as any).__existing_leaderboard_ref__) {
+    leaderboard = (globalThis as any).__existing_leaderboard_ref__;
+  } else {
+    leaderboard = ref([]);
+    (globalThis as any).__existing_leaderboard_ref__ = leaderboard;
+  }
+} catch (e) {
+  leaderboard = ref([]);
+}
+
+/**
+ * 提交分数到后端排行榜
+ */
+async function submitScore() {
+  // 基本校验
+  submitMsg.value = '';
+  submitError.value = false;
+
+  const name = (submitNickname.value || '').trim();
+  if (!name) {
+    submitMsg.value = '请输入昵称后再上传';
+    submitError.value = true;
+    return;
+  }
+  if (name.length > 50) {
+    submitMsg.value = '昵称太长（上限 50 字）';
+    submitError.value = true;
+    return;
+  }
+
+  if (submitting.value || submitted.value) return;
+
+  submitting.value = true;
+  try {
+    // 调用后端 API（注意接口参数键名与你后端一致）
+    const payload = {
+      character_key: CHARACTER_KEY,
+      nickname: name,
+      count: score.value || 0, // 这里用 count 字段，如果后端改为 score 则调整
+    };
+    console.log('payload', payload)
+    const res = await addRankingItem(payload);
+    // 处理可能的返回结构（适配 axios 风格）
+    // 若你使用 axios，res.data 里通常包含 backend 返回体
+    console.log('res', res)
+
+    // 简单判断成功（你可以根据后端实际返回结构调整）
+    if (res.success) {
+      submitMsg.value = '上传成功';
+      submitError.value = false;
+      submitted.value = true;
+    } else {
+      submitMsg.value = (data && data.message) ? data.message : '上传失败（服务器返回异常）';
+      submitError.value = true;
+    }
+  } catch (err: any) {
+    // 处理错误（axios 会在 err.response 中包含更多信息）
+
+    submitMsg.value = '上传失败，请稍后重试';
+    submitError.value = true;
+    console.error('上传分数失败：', err);
+  } finally {
+    submitting.value = false;
+  }
+}
 /* ===================== 常量（颜色、参数，写死） ===================== */
 const COLOR_ICE = '#bff7ff';
 const COLOR_NEON = '#ff66c4';
@@ -128,7 +284,7 @@ const playerImg = new Image();
 let playerImgLoaded = false;
 let playerImgBroken = false;
 playerImg.onload = () => { playerImgLoaded = true; playerImgBroken = false; };
-playerImg.onerror = (e) => { playerImgLoaded = false; playerImgBroken = true; console.warn('player.png 加载失败，请检查路径 public/assets/player.png', e); };
+playerImg.onerror = (e) => { playerImgLoaded = false; playerImgBroken = true; console.warn('player.png 加载失败', e); };
 playerImg.src = '/player.webp'; // 放 public/assets/player.png
 
 
@@ -158,25 +314,7 @@ function rand(min: number, max: number) { return Math.random() * (max - min) + m
 function distance(a: Vec2, b: Vec2) { const dx = a.x - b.x, dy = a.y - b.y; return Math.sqrt(dx * dx + dy * dy); }
 function spawnScorePopup(x: number, y: number, text: string, color = '#bff7ff') { floaters.push({ x, y, text, life: 0.9, vy: -36, color }); }
 
-/* ===================== 本地排行榜（Top10） ===================== */
-const LEADERBOARD_KEY = 'crystal_leaderboard_v1';
-const leaderboard = ref<{ score: number; time: string; date: number }[]>(getLeaderboard());
 
-function getLeaderboard() {
-  try {
-    const raw = localStorage.getItem(LEADERBOARD_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw);
-  } catch (e) { return []; }
-}
-function addScoreToLeaderboard(sc: number) {
-  const list = getLeaderboard();
-  list.push({ score: sc, time: new Date().toLocaleString(), date: Date.now() });
-  list.sort((a: any, b: any) => b.score - a.score);
-  const top = list.slice(0, 10);
-  try { localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(top)); } catch (e) { }
-  leaderboard.value = top;
-}
 /* ===================== 播放语音 ===================== */
 let currentAudio: HTMLAudioElement | null = null;
 
@@ -202,15 +340,17 @@ function stopVoice() {
     currentAudio = null;
   }
 }
+
+
 /* ===================== 生命周期：挂载/卸载 ===================== */
+
+let resizeHandler: (() => void) | null = null;
 onMounted(() => {
   const canvas = canvasRef.value!;
   const container = containerRef.value!;
   ctx = canvas.getContext('2d')!;
 
-
-
-  const resize = () => {
+  resizeHandler = () => {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = Math.max(1, Math.floor(container.clientWidth));
     const h = Math.max(1, Math.floor(container.clientHeight));
@@ -225,14 +365,15 @@ onMounted(() => {
     player.w = Math.min(120, Math.max(48, Math.floor(w * 0.12)));
     player.h = player.w * 1.25;
   };
-
-  resize();
-  window.addEventListener('resize', resize);
+  resizeHandler()
+  window.addEventListener('resize', resizeHandler);
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
 });
 
 onBeforeUnmount(() => {
+  window.removeEventListener('resize', resizeHandler);
+  resizeHandler = null;
   window.cancelAnimationFrame(rafId);
   window.removeEventListener('keydown', onKeyDown);
   window.removeEventListener('keyup', onKeyUp);
@@ -348,7 +489,7 @@ function handleHitFinal(t: Target) {
   try {
     if (t.kind === 'gold' && Math.random() < 0.50) triggerEasterEgg();
     if (t.kind === 'tough' && Math.random() < 0.15) triggerEasterEgg();
-    if (kind === 'split' && Math.random() < 0.05) triggerEasterEgg();
+    if (t.kind === 'split' && Math.random() < 0.05) triggerEasterEgg();
   } catch (e) { /* 容错 */ }
 
   shake = 8;
@@ -390,8 +531,8 @@ function updateGame(dt: number) {
   const mv = (movingLeft ? -1 : 0) + (movingRight ? 1 : 0);
   player.vx = mv * PLAYER_SPEED;
   player.x += player.vx * dt;
-  player.x = Math.max(player.w * 0.5, Math.min(w - player.w * 0.5, player.x));
-
+  const edgePadding = Math.max(player.w * 0.15, 20); // 15% 宽度 或最少 20px
+  player.x = Math.max(edgePadding, Math.min(w - edgePadding, player.x));
   // move targets
   for (let t of targets) {
     t.pos.x += t.vx * dt * 60;
@@ -433,7 +574,6 @@ function updateGame(dt: number) {
         } else {
           // 轻微反馈：缩小或闪烁
           t.r = Math.max(6, t.r * 0.86);
-          try { hitSfxTough.currentTime = 0; hitSfxTough.play(); } catch (e) { }
           // 小的分数提示（可调整为偏低）
           spawnScorePopup(t.pos.x, t.pos.y - t.r, `+${Math.round(t.score * 0.25)}`, t.color);
         }
@@ -482,7 +622,6 @@ function updateGame(dt: number) {
   if (timeLeft.value <= 0 && running.value) {
     running.value = false; finished.value = true;
     if (score.value >= EASTER_EGG_SCORE) triggerEasterEgg();
-    addScoreToLeaderboard(score.value);
   }
 
   shake *= 0.9;
@@ -641,7 +780,7 @@ function restart() {
 const isMobile = computed(() => containerRef.value ? containerRef.value.clientWidth < 720 : false);
 
 /* debug */
-Object.assign(window, { __game_debug: { targets, particles, bullets, player, floaters, leaderboard } });
+Object.assign(window, { __game_debug: { targets, particles, bullets, player, floaters } });
 
 </script>
 
@@ -660,7 +799,7 @@ Object.assign(window, { __game_debug: { targets, particles, bullets, player, flo
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
-    gap: 12px;
+ 
 
     &__left,
     &__center,
@@ -712,11 +851,139 @@ Object.assign(window, { __game_debug: { targets, particles, bullets, player, flo
         border: none;
       }
 
-      &.ghost {
-        background: rgba(255, 255, 255, 0.02);
+    }
+  }
+
+  .lb-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 4, 8, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1200;
+    backdrop-filter: blur(4px);
+    padding: 18px;
+    outline: none;
+
+    .lb-card {
+      width: 680px;
+      max-width: 100%;
+      max-height: 86vh;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 14px;
+      box-shadow: 0 24px 60px rgba(2, 4, 8, 0.8);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+
+      &__hd {
+        padding: 14px 18px;
+      }
+
+      &__hd,
+      &__ft {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .lb-card__hd {
+        padding: 14px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        h3 {
+          margin: 0;
+          color: #bff7ff;
+          font-size: 1.15rem;
+        }
+
+        .lb-close {
+          background: transparent;
+          border: none;
+          color: #eef6fb;
+          font-size: 1rem;
+          cursor: pointer;
+        }
+      }
+
+      .lb-card__body {
+        padding: 8px 18px 12px 18px;
+        overflow: auto;
+        flex: 1 1 auto;
+
+        .lb-loading {
+          color: rgba(255, 255, 255, 0.7);
+          padding: 24px;
+          text-align: center;
+        }
+
+        .lb-list {
+          list-style: none;
+          margin: 0;
+          padding: 6px 0;
+
+          .lb-empty {
+            color: rgba(255, 255, 255, 0.6);
+            padding: 18px;
+            text-align: center;
+          }
+
+          .lb-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0.008));
+            border: 1px solid rgba(255, 255, 255, 0.02);
+
+            .rank {
+              width: 44px;
+              text-align: center;
+              font-weight: 800;
+              color: #bff7ff;
+            }
+
+            .info {
+              flex: 1;
+
+              .name {
+                font-weight: 700;
+                color: #fff;
+              }
+
+              .meta {
+                font-size: 0.86rem;
+                color: rgba(255, 255, 255, 0.6);
+                margin-top: 2px;
+              }
+            }
+
+            .score {
+              font-weight: 900;
+              color: #ffd580;
+              min-width: 84px;
+              text-align: right;
+            }
+          }
+        }
+      }
+
+      .lb-card__ft {
+        padding: 12px 18px;
+        border-top: 1px solid rgba(255, 255, 255, 0.02);
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
       }
     }
   }
+
 
   .game-area {
     position: relative;
@@ -725,8 +992,7 @@ Object.assign(window, { __game_debug: { targets, particles, bullets, player, flo
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
-
+   
     canvas {
       display: block;
       background: transparent;
@@ -739,7 +1005,7 @@ Object.assign(window, { __game_debug: { targets, particles, bullets, player, flo
     /* 控件：更大、更好按 */
     .controls {
       position: absolute;
-      bottom: 12px;
+      bottom: 64px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
@@ -748,7 +1014,7 @@ Object.assign(window, { __game_debug: { targets, particles, bullets, player, flo
 
       .ctrl {
         border-radius: 14px;
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        border: 1px solid #bff7ff;
         background: rgba(255, 255, 255, 0.02);
         color: #eef6fb;
         padding: 14px 18px;
@@ -792,6 +1058,48 @@ Object.assign(window, { __game_debug: { targets, particles, bullets, player, flo
         max-width: 420px;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
 
+        .submit-row {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+          margin: 12px 0;
+
+          .label {
+            color: rgba(255, 255, 255, 0.8);
+            margin-right: 6px;
+          }
+
+          .nickname-input {
+            flex: 1;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.02);
+            color: #fff;
+            outline: none;
+            font-size: 0.95rem;
+
+            &::placeholder {
+              color: rgba(255, 255, 255, 0.45);
+            }
+          }
+
+          .btn.primary {
+            min-width: 120px;
+            padding: 8px 12px;
+            font-weight: 700;
+          }
+        }
+
+        .submit-msg {
+          margin-top: 8px;
+          color: #bff7ff;
+
+          &.error {
+            color: #ff9fb6;
+          }
+        }
+
         h2 {
           margin: 0 0 8px 0;
           font-size: 1.2rem;
@@ -830,58 +1138,6 @@ Object.assign(window, { __game_debug: { targets, particles, bullets, player, flo
     border-top: 1px solid rgba(255, 255, 255, 0.03);
   }
 
-  .leaderboard {
-    margin-top: 12px;
-    text-align: left;
 
-    ol {
-      margin: 8px 0 0 12px;
-
-      li {
-        margin: 6px 0;
-
-        .rank {
-          color: #bff7ff;
-          margin-right: 8px;
-        }
-
-        .score {
-          font-weight: 700;
-          margin-right: 8px;
-        }
-
-        .meta {
-          color: rgba(255, 255, 255, 0.6);
-          margin-left: 6px;
-        }
-      }
-    }
-  }
-
-  /* 响应式 */
-  @media (max-width: 720px) {
-    .crystal-game {
-      .hud {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 6px;
-        padding: 10px;
-      }
-
-      .game-area {
-        min-height: 50vh;
-
-        .controls {
-          bottom: 10px;
-          gap: 12px;
-
-          .ctrl {
-            width: 64px;
-            padding: 12px 14px;
-          }
-        }
-      }
-    }
-  }
 }
 </style>

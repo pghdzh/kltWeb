@@ -7,3 +7,15 @@ import http from "../axios";
 export const getRankingList = (params: any): any => {
   return http.get("/api/rankings", params);
 };
+
+/**
+ * @function 新增排行榜记录
+ * @param {object} data - 例如：{ nickname: "狂三", count: 5 }
+ */
+export const addRankingItem = (data: {
+  character_key: string;
+  nickname: string;
+  count?: number;
+}): any => {
+  return http.post("/api/rankings", data);
+};

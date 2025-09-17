@@ -56,7 +56,7 @@
 import { ref, onMounted, onBeforeUnmount, onUnmounted } from "vue";
 import { io } from "socket.io-client";
 
-const siteId = "hui";
+const siteId = "klt";
 const onlineCount = ref<number | null>(null);
 const socket = io("http://1.94.189.79:3000", { query: { siteId } });
 
@@ -69,7 +69,7 @@ const links = [
   { name: "设定笔记", path: "/timeLine" },
   { name: "寄语心声", path: "/message" },
   { name: "水晶画廊", path: "/gallery" },
-  { name: "i珂TV", path: "/resources" },
+  // { name: "i珂TV", path: "/resources" },
   { name: "小游戏", path: "/game" },
 ];
 

@@ -70,7 +70,7 @@ import { ref, onMounted, nextTick } from 'vue';
 import { getMessageList, createMessage } from '@/api/modules/message';
 
 const messages = ref<any[]>([]);
-const name = ref(localStorage.getItem('megumi_name') || '');
+const name = ref(localStorage.getItem('klt_name') || '');
 const content = ref('');
 const loading = ref(true);
 const isSending = ref(false);
@@ -97,7 +97,7 @@ const submitMessage = async () => {
   isSending.value = true;
   const payload = { name: name.value || '匿名', content: content.value };
   try {
-    localStorage.setItem('megumi_name', name.value);
+    localStorage.setItem('klt_name', name.value);
     content.value = '';
     await nextTick();
     // 发送请求
@@ -124,7 +124,7 @@ const formatTime = (time: string) => {
 };
 
 const getInitial = (n?: string) => {
-  if (!n) return '惠';
+  if (!n) return '匿';
   return n.trim().slice(0, 1).toUpperCase();
 };
 
