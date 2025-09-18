@@ -2,8 +2,8 @@
     <div class="yuzuki-resources">
         <header class="hero">
             <div class="hero-inner">
-                <h1>惠の资源库</h1>
-                <p class="subtitle">访客可自由上传网盘（百度 / 夸克）链接</p>
+                <h1>i珂</h1>
+                <p class="subtitle">可自由上传关于珂莱塔相关链接</p>
             </div>
         </header>
 
@@ -18,20 +18,17 @@
 
                 <form @submit.prevent="addResource" class="upload-form" :aria-hidden="uploaderCollapsed">
                     <div class="row">
-                        <input v-model="form.title" type="text" placeholder="资源标题（必填，如果有解压码之类的也写这里吧）" aria-label="资源标题" />
-                        <select v-model="form.type" aria-label="网盘类型">
-                            <option value="baidu">百度网盘</option>
-                            <option value="quark">夸克网盘</option>
-                        </select>
+                        <input v-model="form.title" type="text" placeholder="标题（必填，如果有解压码之类的也写这里吧）" aria-label="标题" />
+                        <input v-model="form.type" type="text" placeholder="链接类型(网页链接、b站视频、网盘链接等等)" aria-label="来源" />
                     </div>
 
                     <div class="row">
                         <input v-model="form.uploader" type="text" placeholder="上传人（可选）" aria-label="上传人" />
-                        <input v-model="form.link" type="url" placeholder="网盘链接(请选择好对应网盘且只输入网址不能有中文)" aria-label="网盘链接" />
+                        <input v-model="form.link" type="url" placeholder="链接(只输入网址不能有中文)" aria-label="链接" />
                     </div>
 
                     <div class="actions">
-                        <button type="submit" class="btn primary">上传资源</button>
+                        <button type="submit" class="btn primary">上传</button>
                     </div>
                 </form>
             </section>
@@ -53,7 +50,7 @@
                 <ul class="items">
                     <li v-for="item in sortedResources" :key="item.id" class="item">
                         <a :href="item.link" target="_blank" rel="noopener noreferrer" class="title">{{ item.title
-                        }}</a>
+                            }}</a>
 
                         <div class="meta">
                             <div class="left">
@@ -73,7 +70,7 @@
                                 </button>
 
 
-                                <span class="badge" :class="item.type">{{ item.type === 'baidu' ? '百度' : '夸克' }}</span>
+                                <span class="badge">{{ item.type }}</span>
                             </div>
                         </div>
                     </li>
@@ -83,7 +80,7 @@
             </section>
         </main>
 
-        <footer class="foot">提示：点击标题将直接跳转到网盘链接</footer>
+        <footer class="foot">提示：点击标题将直接跳转</footer>
     </div>
 </template>
 
@@ -104,14 +101,14 @@ interface Resource {
     role_key?: string
 }
 
-const STORAGE_KEY = 'yuzuki_resources_v1'
-const DEFAULT_ROLE = 'hui'
+const STORAGE_KEY = 'klt_resources_v1'
+const DEFAULT_ROLE = 'klt'
 
 const form = ref<{ title: string; uploader: string; link: string; type: ResourceType }>({
     title: '',
     uploader: '',
     link: '',
-    type: 'baidu',
+    type: '',
 })
 
 const resources = ref<Resource[]>([])
@@ -188,17 +185,6 @@ function toggleUploader() {
     uploaderCollapsed.value = !uploaderCollapsed.value
 }
 
-function validLinkForType(link: string, type: ResourceType) {
-    try {
-        const u = new URL(link)
-        const host = u.host.toLowerCase()
-        if (type === 'baidu') return host.includes('pan.baidu.com')
-        if (type === 'quark') return host.includes('quark.cn')
-        return !!host
-    } catch (e) {
-        return false
-    }
-}
 
 async function addResource() {
     const t = form.value.title.trim()
@@ -207,12 +193,8 @@ async function addResource() {
         return ElMessage.warning('请填写完整信息')
     }
     if (!/^https?:\/\//i.test(l)) {
-        return ElMessage.error('请输入正确的链接')
+        return ElMessage.error('请输入正确的链接(https开头)')
     }
-    if (!validLinkForType(l, form.value.type)) {
-        return ElMessage.error('仅支持百度网盘或夸克链接')
-    }
-
     // 尝试调用后端接口
     try {
         const payload = {
@@ -242,7 +224,7 @@ function resetForm() {
     form.value.title = ''
     form.value.uploader = ''
     form.value.link = ''
-    form.value.type = 'baidu'
+    form.value.type = ''
 }
 
 async function handleLike(item: Resource) {
@@ -302,10 +284,11 @@ function formatTime(iso: string) {
 
 <style lang="scss" scoped>
 $bg1: linear-gradient(135deg, #fff6fb 0%, #f6fbff 100%);
-$accent: #b983ff; // 甜美的紫色
-$accent-2: #ffb3d9; // 粉色
+$accent: #ff66c4; // 粉色
 $text: #3b2f36;
 $muted: #8b7e87;
+$ice-blue: #bff7ff;
+$neon-pink: #ff66c4;
 
 .yuzuki-resources {
     min-height: 100vh;
@@ -532,17 +515,8 @@ $muted: #8b7e87;
                                 font-size: 12px;
                                 font-weight: 700;
 
-                                &.baidu {
-                                    background: rgba(185, 131, 255, 0.12);
-                                }
+                                background: rgba(185, 131, 255, 0.12);
 
-                                &.quark {
-                                    background: rgba(255, 179, 217, 0.12);
-                                }
-
-                                &.other {
-                                    background: rgba(188, 187, 189, 0.12);
-                                }
                             }
                         }
                     }

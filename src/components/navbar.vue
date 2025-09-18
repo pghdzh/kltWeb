@@ -69,7 +69,7 @@ const links = [
   { name: "设定笔记", path: "/timeLine" },
   { name: "寄语心声", path: "/message" },
   { name: "水晶画廊", path: "/gallery" },
-  // { name: "i珂TV", path: "/resources" },
+  { name: "i珂TV", path: "/resources" },
   { name: "小游戏", path: "/game" },
 ];
 

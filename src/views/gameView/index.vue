@@ -59,9 +59,12 @@
         <div class="overlay__card">
           <h2>时间到</h2>
           <p>得分：<strong>{{ score }}</strong></p>
+          <!-- 显示触发过的语音数量 -->
+          <p class="voice-count">
+            已触发语音：<strong>{{ triggeredVoices.size }}</strong> / 14
+          </p>
           <!-- 新增：昵称输入 + 上传分数 -->
           <div class="submit-row">
-            <label class="label">昵称</label>
             <input class="nickname-input" v-model="submitNickname" type="text" placeholder="输入你的昵称（最多50字）"
               maxlength="50" />
             <button class="btn primary" :disabled="submitting || submitted" @click="submitScore">
@@ -70,9 +73,6 @@
               <span v-if="!submitting && submitted">已上传</span>
             </button>
           </div>
-
-
-
           <div class="submit-msg" v-if="submitMsg" :class="{ error: submitError }">
             {{ submitMsg }}
           </div>
@@ -83,14 +83,10 @@
         </div>
       </div>
 
-      <!-- <div class="mobile-tip" v-if="isMobile && running">使用左右按钮移动，珂莱塔会自动开火</div> -->
+
     </div>
 
-    <!-- <footer class="game-footer">
-      <div>提示：将珂莱塔语音放到 <code>/assets/voice/carlotta_easter.mp3</code>；命中音效放到 <code>/assets/sfx/</code>（可选）。人物贴图放到
-        <code>/assets/player.png</code>（public 下）。
-      </div>
-    </footer> -->
+
   </div>
 </template>
 
@@ -238,7 +234,7 @@ const COLOR_BG = '#05060a';
 const GAME_TIME = 60;
 const TARGET_MAX = 6;
 const MOBILE_MAX_TARGET = 4;
-const EASTER_EGG_SCORE = 350;
+
 
 const PLAYER_SPEED = 240; // px/s
 const BULLET_SPEED = 900; // px/s
@@ -497,6 +493,8 @@ function handleHitFinal(t: Target) {
 
 /* ===================== 彩蛋音频 ===================== */
 let isOnCooldown = false; // 冷却标记
+// 初始化触发记录，从 localStorage 读取，如果没有就用空数组
+const triggeredVoices = new Set(JSON.parse(localStorage.getItem('triggeredVoices') || '[]'));
 
 function triggerEasterEgg() {
   if (isOnCooldown) return; // 冷却中不触发
@@ -504,7 +502,11 @@ function triggerEasterEgg() {
   // 生成随机编号 0 ~ 13
   const randomIndex = Math.floor(Math.random() * 14);
   playVoice(`/gameAudio/audio (${randomIndex}).mp3`);
+  // 记录触发过的语音编号
+  triggeredVoices.add(randomIndex);
 
+  // 保存到 localStorage
+  localStorage.setItem('triggeredVoices', JSON.stringify([...triggeredVoices]));
   // 开启冷却
   isOnCooldown = true;
   setTimeout(() => {
@@ -621,7 +623,7 @@ function updateGame(dt: number) {
   timeLeft.value = Math.max(0, timeLeft.value - dt);
   if (timeLeft.value <= 0 && running.value) {
     running.value = false; finished.value = true;
-    if (score.value >= EASTER_EGG_SCORE) triggerEasterEgg();
+    triggerEasterEgg();
   }
 
   shake *= 0.9;
@@ -799,7 +801,7 @@ Object.assign(window, { __game_debug: { targets, particles, bullets, player, flo
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
- 
+
 
     &__left,
     &__center,
@@ -992,7 +994,7 @@ Object.assign(window, { __game_debug: { targets, particles, bullets, player, flo
     display: flex;
     align-items: center;
     justify-content: center;
-   
+
     canvas {
       display: block;
       background: transparent;
@@ -1061,7 +1063,8 @@ Object.assign(window, { __game_debug: { targets, particles, bullets, player, flo
         .submit-row {
           display: flex;
           gap: 8px;
-          align-items: center;
+          flex-wrap: wrap;
+          flex-direction: column;
           margin: 12px 0;
 
           .label {
@@ -1109,6 +1112,16 @@ Object.assign(window, { __game_debug: { targets, particles, bullets, player, flo
         p {
           margin: 0 0 12px 0;
           color: rgba(255, 255, 255, 0.9);
+
+          &.voice-count {
+            font-size: 1.05rem;
+            color: #7fffd4;
+            margin-bottom: 16px;
+
+            strong {
+              color: #bff7ff;
+            }
+          }
         }
       }
 
@@ -1116,28 +1129,7 @@ Object.assign(window, { __game_debug: { targets, particles, bullets, player, flo
         background: linear-gradient(180deg, rgba(2, 4, 8, 0.6), rgba(2, 4, 8, 0.85));
       }
     }
-
-    .mobile-tip {
-      position: absolute;
-      bottom: 82px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255, 255, 255, 0.03);
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 0.9rem;
-      color: rgba(255, 255, 255, 0.9);
-      z-index: 6;
-    }
   }
-
-  .game-footer {
-    padding: 12px 16px;
-    font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.6);
-    border-top: 1px solid rgba(255, 255, 255, 0.03);
-  }
-
 
 }
 </style>
