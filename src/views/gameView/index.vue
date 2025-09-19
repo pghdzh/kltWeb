@@ -61,7 +61,7 @@
           <p>得分：<strong>{{ score }}</strong></p>
           <!-- 显示触发过的语音数量 -->
           <p class="voice-count">
-            已触发语音：<strong>{{ triggeredVoices.size }}</strong> / 14
+            已触发语音：<strong>{{ triggeredVoices.size }}</strong> / 34
           </p>
           <!-- 新增：昵称输入 + 上传分数 -->
           <div class="submit-row">
