@@ -147,7 +147,7 @@ $text: #eef6fb;
             content: "";
             position: absolute;
             inset: 0;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.1);
             pointer-events: none;
             z-index: 1;
         }

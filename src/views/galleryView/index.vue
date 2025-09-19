@@ -426,7 +426,7 @@ onMounted(async () => {
     sentinelObserver.observe(sentinel.value);
   }
   // 1. 基础配置信息
-  const total = 7; // 总共 9 张图（编号 1～9）
+  const total = 9; // 总共 9 张图（编号 1～9）
   const pickCount = 3; // 每次抽取 3 张
   const vw = window.innerWidth;
   const vh = window.innerHeight;

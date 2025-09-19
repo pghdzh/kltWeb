@@ -71,6 +71,7 @@ const links = [
   { name: "水晶画廊", path: "/gallery" },
   { name: "i珂TV", path: "/resources" },
   { name: "小游戏", path: "/game" },
+  { name: "语音馆", path: "/voice" },
 ];
 
 const handleScroll = () => {

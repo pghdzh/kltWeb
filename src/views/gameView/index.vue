@@ -499,8 +499,8 @@ const triggeredVoices = new Set(JSON.parse(localStorage.getItem('triggeredVoices
 function triggerEasterEgg() {
   if (isOnCooldown) return; // 冷却中不触发
 
-  // 生成随机编号 0 ~ 13
-  const randomIndex = Math.floor(Math.random() * 14);
+  // 生成随机编号 0 ~ 33
+  const randomIndex = Math.floor(Math.random() * 34) + 1;
   playVoice(`/gameAudio/audio (${randomIndex}).mp3`);
   // 记录触发过的语音编号
   triggeredVoices.add(randomIndex);
