@@ -348,8 +348,11 @@ onMounted(() => {
 
   resizeHandler = () => {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const w = Math.max(1, Math.floor(container.clientWidth));
+    let w = Math.max(1, Math.floor(container.clientWidth));
     const h = Math.max(1, Math.floor(container.clientHeight));
+    const minWidth =  360;
+    w = Math.max(w, minWidth);
+
     canvas.width = Math.floor(w * dpr);
     canvas.height = Math.floor(h * dpr);
     canvas.style.width = w + 'px';
@@ -994,7 +997,7 @@ Object.assign(window, { __game_debug: { targets, particles, bullets, player, flo
     display: flex;
     align-items: center;
     justify-content: center;
-
+    min-width: 360px;
     canvas {
       display: block;
       background: transparent;
@@ -1011,7 +1014,7 @@ Object.assign(window, { __game_debug: { targets, particles, bullets, player, flo
       left: 50%;
       transform: translateX(-50%);
       display: flex;
-      gap: 18px;
+      gap: 180px;
       z-index: 6;
 
       .ctrl {
