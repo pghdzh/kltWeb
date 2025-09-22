@@ -1,6 +1,6 @@
 <template>
     <main class="home">
-
+        <canvas ref="canvasEl" class="rose-canvas"></canvas>
         <!-- 背景轮播放在最底层 -->
         <div class="carousel carousel1">
             <img v-for="(src, idx) in randomFive" :key="idx" :src="src" class="carousel-image"
@@ -30,6 +30,127 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue';
+import violet from '@/assets/violet.png'
+
+
+
+const canvasEl = ref<HTMLCanvasElement | null>(null)
+let ctx: CanvasRenderingContext2D
+let animationId: number
+let lastTime = 0
+let elapsed = 0
+
+interface Rose {
+    baseX: number
+    y: number
+    size: number
+    speed: number
+    swayAmp: number
+    swayFreq: number
+    phase: number
+    angle: number
+    angularSpeed: number
+}
+
+const roses: Rose[] = []
+const ROSE_COUNT_DESKTOP = 20
+const ROSE_COUNT_MOBILE = 8
+const ROSE_IMG = new Image()
+ROSE_IMG.src = violet
+
+function initRoses(count: number) {
+    roses.length = 0
+    const canvas = canvasEl.value!
+    const w = canvas.width / (window.devicePixelRatio || 1)
+    const h = canvas.height / (window.devicePixelRatio || 1)
+
+    for (let i = 0; i < count; i++) {
+        const baseX = Math.random() * w
+        roses.push({
+            baseX,
+            y: Math.random() * -h,
+            size: 30 + Math.random() * 40,
+            speed: 30 + Math.random() * 70,
+            swayAmp: 20 + Math.random() * 20,
+            swayFreq: 0.5 + Math.random() * 1,
+            phase: Math.random() * Math.PI * 2,
+            angle: Math.random() * Math.PI * 2,
+            angularSpeed: (Math.random() - 0.5) * 2
+        })
+    }
+    elapsed = 0
+}
+
+let resizeTimeout: number
+function resizeCanvas() {
+    window.clearTimeout(resizeTimeout)
+    resizeTimeout = window.setTimeout(() => {
+        cancelAnimationFrame(animationId)
+        const canvas = canvasEl.value!
+        const parent = canvas.parentElement!
+        const dpr = window.devicePixelRatio || 1
+        const w = parent.clientWidth
+        const h = parent.clientHeight
+
+        canvas.style.width = w + 'px'
+        canvas.style.height = h + 'px'
+        canvas.width = w * dpr
+        canvas.height = h * dpr
+
+        ctx.setTransform(1, 0, 0, 1, 0, 0)
+        ctx.scale(dpr, dpr)
+
+        const isMobile = w < 768
+        initRoses(isMobile ? ROSE_COUNT_MOBILE : ROSE_COUNT_DESKTOP)
+        lastTime = 0
+        animationId = requestAnimationFrame(tickCanvas)
+    }, 200)
+}
+
+function tickCanvas(now: number) {
+    if (!lastTime) lastTime = now
+    const dt = (now - lastTime) / 1000
+    lastTime = now
+    elapsed += dt
+
+    const canvas = canvasEl.value!
+    const w = canvas.clientWidth
+    const h = canvas.clientHeight
+
+    ctx.clearRect(0, 0, w, h)
+
+    roses.forEach(r => {
+        r.y += r.speed * dt
+        const sway = r.swayAmp * Math.sin(r.phase + elapsed * r.swayFreq)
+        const x = r.baseX + sway
+        r.angle += r.angularSpeed * dt
+
+        if (r.y > h + r.size) {
+            r.y = -r.size
+            r.baseX = Math.random() * w
+            r.phase = Math.random() * Math.PI * 2
+        }
+
+        if (x > w + r.size || x < -r.size) return
+
+
+        // 计算透明度
+        const alpha = 1 - (r.y / h) * 0.5;
+        // 限制 alpha 在 [0,1] 之间（可选）
+        const clampedAlpha = Math.max(0, Math.min(1, alpha));
+        ctx.save()
+        ctx.globalAlpha = clampedAlpha;
+        ctx.translate(x, r.y)
+        ctx.rotate(r.angle)
+        ctx.drawImage(ROSE_IMG, -r.size / 2, -r.size / 2, r.size, r.size)
+        ctx.restore()
+    })
+
+    animationId = requestAnimationFrame(tickCanvas)
+}
+
+
+
 
 // 固定要循环的副标题句子（写死）
 const lines = [
@@ -110,11 +231,22 @@ onMounted(() => {
     Imgtimer = window.setInterval(() => {
         currentIndex.value = (currentIndex.value + 1) % 5;
     }, 5000);
+
+    const canvas = canvasEl.value!
+    ctx = canvas.getContext('2d')!
+
+    ROSE_IMG.onload = () => {
+        resizeCanvas()
+    }
+    window.addEventListener('resize', resizeCanvas)
 });
 
 onBeforeUnmount(() => {
     clearInterval(Imgtimer);
     if (timer) window.clearTimeout(timer);
+
+    cancelAnimationFrame(animationId)
+    window.removeEventListener('resize', resizeCanvas)
 });
 
 </script>
@@ -136,6 +268,14 @@ $text: #eef6fb;
     background-color: #05060a;
     color: $text;
     font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'PingFang SC', 'Noto Sans CJK SC', sans-serif;
+
+    .rose-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+        pointer-events: none;
+    }
 
     .carousel {
         position: absolute;
@@ -208,6 +348,7 @@ $text: #eef6fb;
         justify-content: center;
         gap: 8px;
         z-index: 9;
+
         .typed {
             display: inline-block;
             white-space: nowrap;
@@ -234,6 +375,7 @@ $text: #eef6fb;
     background: linear-gradient(180deg, rgba(7, 10, 18, 0.6), rgba(4, 6, 10, 0.8));
     padding: 14px 18px;
     z-index: 9;
+
     .foot-inner {
         max-width: 1100px;
         margin: 0 auto;
