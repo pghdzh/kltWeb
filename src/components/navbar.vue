@@ -1,5 +1,11 @@
 <template>
-  <nav ref="navbarRef" class="navbar" :class="{ 'is-scrolled': isScrolled }" role="navigation" aria-label="主导航">
+  <nav
+    ref="navbarRef"
+    class="navbar"
+    :class="{ 'is-scrolled': isScrolled }"
+    role="navigation"
+    aria-label="主导航"
+  >
     <!-- 装饰层：流光 + 粒子（纯 CSS） -->
     <div class="nav-decor" aria-hidden="true">
       <span class="flow"></span>
@@ -13,7 +19,7 @@
     </div>
 
     <div class="navbar__container">
-      <div class="navbar__logo" @click="() => { }" role="button" tabindex="0">
+      <div class="navbar__logo" @click="() => {}" role="button" tabindex="0">
         <span class="logo-icon">❄️</span>
         <span class="brand-text">珂莱塔设定集</span>
       </div>
@@ -22,16 +28,29 @@
         在线：<span class="count">{{ onlineCount }} 人</span>
       </div>
 
-      <button class="navbar__toggle" :class="{ active: open }" @click="toggleMenu" aria-label="切换菜单"
-        :aria-expanded="String(open)">
+      <button
+        class="navbar__toggle"
+        :class="{ active: open }"
+        @click="toggleMenu"
+        aria-label="切换菜单"
+        :aria-expanded="String(open)"
+      >
         <span class="line line--1"></span>
         <span class="line line--2"></span>
         <span class="line line--3"></span>
       </button>
 
-      <ul class="navbar__links" :class="{ 'is-open': open }" id="primary-navigation">
+      <ul
+        class="navbar__links"
+        :class="{ 'is-open': open }"
+        id="primary-navigation"
+      >
         <li v-for="item in links" :key="item.name" @click="onLinkClick">
-          <router-link :to="item.path" class="link" active-class="router-link-active">
+          <router-link
+            :to="item.path"
+            class="link"
+            active-class="router-link-active"
+          >
             <span class="link-inner">
               <span class="link-text">{{ item.name }}</span>
               <span class="link-glow" aria-hidden="true"></span>
@@ -40,9 +59,14 @@
         </li>
 
         <li>
-          <a href="http://slty.site/#/redirector" target="_blank" rel="noopener" class="link">
+          <a
+            href="http://slty.site/#/redirector"
+            target="_blank"
+            rel="noopener"
+            class="link"
+          >
             <span class="link-inner">
-              <span class="link-text">总站</span>
+              <span class="link-text">霜落映界</span>
               <span class="link-glow" aria-hidden="true"></span>
             </span>
           </a>
@@ -65,27 +89,37 @@ const isScrolled = ref(false);
 const navbarRef = ref<HTMLElement | null>(null);
 
 const links = [
-  { name: "首页", path: "/" },
-  { name: "设定笔记", path: "/timeLine" },
-  { name: "寄语心声", path: "/message" },
-  { name: "水晶画廊", path: "/gallery" },
-  { name: "i珂TV", path: "/resources" },
-  { name: "小游戏", path: "/game" },
-  { name: "语音馆", path: "/voice" },
+  { name: "欧泊之庭", path: "/" },
+  { name: "晶萃秘录", path: "/timeLine" },
+  { name: "缄默回响", path: "/message" },
+  { name: "变彩陈列厅", path: "/gallery" },
+  { name: "幕间戏影", path: "/resources" },
+  { name: "晶斩", path: "/game" },
+  { name: "重塑低语", path: "/voice" },
 ];
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 20;
 };
-const toggleMenu = () => { open.value = !open.value; };
-const onLinkClick = () => { open.value = false; };
+const toggleMenu = () => {
+  open.value = !open.value;
+};
+const onLinkClick = () => {
+  open.value = false;
+};
 
 onMounted(() => {
   window.addEventListener("scroll", handleScroll, { passive: true });
-  socket.on("onlineCount", (count: number) => { onlineCount.value = count; });
+  socket.on("onlineCount", (count: number) => {
+    onlineCount.value = count;
+  });
 });
-onBeforeUnmount(() => { socket.disconnect(); });
-onUnmounted(() => { window.removeEventListener("scroll", handleScroll); });
+onBeforeUnmount(() => {
+  socket.disconnect();
+});
+onUnmounted(() => {
+  window.removeEventListener("scroll", handleScroll);
+});
 </script>
 
 <style lang="scss" scoped>
@@ -112,7 +146,11 @@ $text-soft: #f6f8fb;
   padding: 12px 0;
   display: block;
   /* 深背景 + 轻微玻璃 */
-  background: linear-gradient(180deg, rgba(5, 6, 10, 0.56), rgba(4, 6, 10, 0.8));
+  background: linear-gradient(
+    180deg,
+    rgba(5, 6, 10, 0.56),
+    rgba(4, 6, 10, 0.8)
+  );
   backdrop-filter: blur(8px) saturate(1.05);
   -webkit-backdrop-filter: blur(8px);
   transition: height 0.28s ease, box-shadow 0.28s ease, padding 0.28s ease;
@@ -138,7 +176,12 @@ $text-soft: #f6f8fb;
       width: 160%;
       height: 2.6rem;
       transform: rotate(-6deg);
-      background: linear-gradient(90deg, rgba($ice-blue, 0.06), rgba($neon-pink, 0.16), rgba($violet, 0.12));
+      background: linear-gradient(
+        90deg,
+        rgba($ice-blue, 0.06),
+        rgba($neon-pink, 0.16),
+        rgba($violet, 0.12)
+      );
       filter: blur(18px) saturate(1.1);
       opacity: 0.9;
       animation: flowMove 8s linear infinite;
@@ -154,7 +197,12 @@ $text-soft: #f6f8fb;
         position: absolute;
         display: block;
         border-radius: 50%;
-        background: radial-gradient(circle at 30% 30%, rgba($ice-blue, 0.95), rgba($ice-blue, 0.18) 40%, rgba(255, 255, 255, 0));
+        background: radial-gradient(
+          circle at 30% 30%,
+          rgba($ice-blue, 0.95),
+          rgba($ice-blue, 0.18) 40%,
+          rgba(255, 255, 255, 0)
+        );
         filter: blur(6px);
         opacity: 0.7;
         transform: translate3d(0, 0, 0);
@@ -175,7 +223,12 @@ $text-soft: #f6f8fb;
         left: 22%;
         top: 70%;
         animation: floatUp 12s linear infinite 1.2s;
-        background: radial-gradient(circle at 30% 30%, rgba($neon-pink, 0.95), rgba($neon-pink, 0.18) 40%, transparent);
+        background: radial-gradient(
+          circle at 30% 30%,
+          rgba($neon-pink, 0.95),
+          rgba($neon-pink, 0.18) 40%,
+          transparent
+        );
       }
 
       .p3 {
@@ -184,7 +237,12 @@ $text-soft: #f6f8fb;
         left: 45%;
         top: 30%;
         animation: floatUp 7s linear infinite 0.6s;
-        background: radial-gradient(circle at 30% 30%, rgba($violet, 0.95), rgba($violet, 0.12) 40%, transparent);
+        background: radial-gradient(
+          circle at 30% 30%,
+          rgba($violet, 0.95),
+          rgba($violet, 0.12) 40%,
+          transparent
+        );
         filter: blur(4px);
       }
 
@@ -194,7 +252,12 @@ $text-soft: #f6f8fb;
         left: 68%;
         top: 60%;
         animation: floatUp 11s linear infinite 0.3s;
-        background: radial-gradient(circle at 30% 30%, rgba($ice-blue, 0.9), rgba($ice-blue, 0.14) 40%, transparent);
+        background: radial-gradient(
+          circle at 30% 30%,
+          rgba($ice-blue, 0.9),
+          rgba($ice-blue, 0.14) 40%,
+          transparent
+        );
       }
 
       .p5 {
@@ -203,7 +266,12 @@ $text-soft: #f6f8fb;
         left: 86%;
         top: 18%;
         animation: floatUp 13s linear infinite 0.9s;
-        background: radial-gradient(circle at 30% 30%, rgba($neon-pink, 0.9), rgba($neon-pink, 0.12) 40%, transparent);
+        background: radial-gradient(
+          circle at 30% 30%,
+          rgba($neon-pink, 0.9),
+          rgba($neon-pink, 0.12) 40%,
+          transparent
+        );
       }
     }
   }
@@ -242,8 +310,7 @@ $text-soft: #f6f8fb;
       font-weight: 700;
       font-size: 1.05rem;
       letter-spacing: 0.6px;
-      text-shadow:
-        0 6px 30px rgba($ice-blue, 0.06),
+      text-shadow: 0 6px 30px rgba($ice-blue, 0.06),
         0 2px 10px rgba($neon-pink, 0.03);
       background: linear-gradient(90deg, $ice-blue, $neon-pink);
       -webkit-background-clip: text;
@@ -266,7 +333,8 @@ $text-soft: #f6f8fb;
 
     .count {
       color: $ice-blue;
-      text-shadow: 0 2px 12px rgba($ice-blue, 0.24), 0 0 8px rgba($neon-pink, 0.06);
+      text-shadow: 0 2px 12px rgba($ice-blue, 0.24),
+        0 0 8px rgba($neon-pink, 0.06);
       font-weight: 800;
       margin-left: 6px;
     }
@@ -294,13 +362,18 @@ $text-soft: #f6f8fb;
       margin: 4px 0;
       border-radius: 2px;
       background: linear-gradient(90deg, $ice-blue, $neon-pink);
-      box-shadow: 0 6px 18px rgba($ice-blue, 0.12), 0 0 10px rgba($neon-pink, 0.06);
-      transition: transform 0.28s cubic-bezier(.2, .8, .2, 1), opacity 0.2s;
+      box-shadow: 0 6px 18px rgba($ice-blue, 0.12),
+        0 0 10px rgba($neon-pink, 0.06);
+      transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s;
       transform-origin: center;
     }
 
     &.active {
-      background: linear-gradient(180deg, rgba($violet, 0.06), rgba($neon-pink, 0.04));
+      background: linear-gradient(
+        180deg,
+        rgba($violet, 0.06),
+        rgba($neon-pink, 0.04)
+      );
 
       .line--1 {
         transform: translateY(6px) rotate(45deg);
@@ -360,7 +433,12 @@ $text-soft: #f6f8fb;
           bottom: -8px;
           height: 3px;
           border-radius: 6px;
-          background: linear-gradient(90deg, $ice-blue 0%, $neon-pink 40%, rgba($violet, 0.95) 100%);
+          background: linear-gradient(
+            90deg,
+            $ice-blue 0%,
+            $neon-pink 40%,
+            rgba($violet, 0.95) 100%
+          );
           opacity: 0;
           transform: translateY(6px) scaleX(0.98);
           filter: blur(8px);
@@ -400,7 +478,11 @@ $text-soft: #f6f8fb;
       left: 10px;
       right: 10px;
       margin: 0 auto;
-      background: linear-gradient(180deg, rgba(6, 6, 10, 0.72), rgba(8, 6, 16, 0.86));
+      background: linear-gradient(
+        180deg,
+        rgba(6, 6, 10, 0.72),
+        rgba(8, 6, 16, 0.86)
+      );
       border-radius: 14px;
       padding: 12px;
       flex-direction: column;
@@ -409,7 +491,7 @@ $text-soft: #f6f8fb;
       max-height: 0;
       overflow: hidden;
       transform-origin: top center;
-      transition: max-height 0.36s cubic-bezier(.2, .8, .2, 1), opacity 0.28s;
+      transition: max-height 0.36s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.28s;
       opacity: 0;
       pointer-events: none;
       box-shadow: 0 12px 40px rgba(7, 4, 20, 0.6);
@@ -427,7 +509,11 @@ $text-soft: #f6f8fb;
           display: flex;
           justify-content: center;
           padding: 12px;
-          background: linear-gradient(180deg, rgba($violet, 0.02), rgba($neon-pink, 0.02));
+          background: linear-gradient(
+            180deg,
+            rgba($violet, 0.02),
+            rgba($neon-pink, 0.02)
+          );
           border-radius: 10px;
         }
       }

@@ -327,7 +327,7 @@ $text: #eef6fb;
     .title {
         z-index: 9;
 
-        font-size: 2rem;
+        font-size: 4rem;
         margin: 0;
         font-weight: 800;
         line-height: 1;
@@ -340,7 +340,7 @@ $text: #eef6fb;
     }
 
     .subtitle {
-        font-size: 1.05rem;
+        font-size: 3.05rem;
         min-height: 1.6em; // 保证高度稳定
         color: rgba(238, 247, 255, 0.95);
         display: flex;
@@ -351,7 +351,7 @@ $text: #eef6fb;
 
         .typed {
             display: inline-block;
-            white-space: nowrap;
+            white-space: pre-wrap;
             letter-spacing: 0.6px;
             font-weight: 600;
         }
@@ -426,11 +426,11 @@ $text: #eef6fb;
         padding: 20px 14px;
 
         .title {
-            font-size: 1.5rem;
+            font-size: 2.5rem;
         }
 
         .subtitle {
-            font-size: 0.98rem;
+            font-size: 1.6rem;
         }
     }
 
