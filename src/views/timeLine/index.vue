@@ -227,10 +227,7 @@
                 :aria-labelledby="`tab-${items[current].id}`"
               >
                 <h3 class="story-head">{{ items[current].title }}</h3>
-                <div
-                  class="story-content"
-                  v-html="items[current].content"
-                ></div>
+                <div class="story-content">{{ items[current].content }}</div>
               </article>
             </transition>
           </main>
@@ -1483,6 +1480,7 @@ $inner-glow: rgba(191, 247, 255, 0.08);
     line-height: 1.7;
     margin: 0;
     font-size: 1.05rem;
+    white-space: pre-wrap;
   }
 }
 
@@ -1557,7 +1555,7 @@ $inner-glow: rgba(191, 247, 255, 0.08);
       flex: 1;
       overflow-y: auto;
       padding-right: 8px;
-
+      white-space: pre-wrap;
       /* 自定义滚动条 */
       &::-webkit-scrollbar {
         width: 4px;
