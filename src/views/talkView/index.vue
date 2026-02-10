@@ -284,9 +284,6 @@ const input = ref("");
 const loading = ref(false);
 const msgList = ref<HTMLElement>();
 
-
-
-
 async function sendMessage() {
   if (!input.value.trim()) return;
   if (stats.totalChats === 0 && !localStorage.getItem(STORAGE_STATS_KEY)) {
@@ -312,22 +309,24 @@ async function sendMessage() {
     //  throw new Error("测试错误");
     const history = chatLog.value.filter((msg) => !msg.isEgg && !msg.isError);
     const botReply = await sendMessageToHui(userText, history);
-    chatLog.value.push({
-      id: Date.now() + 1,
-      role: "bot",
-      text: botReply,
-    });
+    if (botReply == "error") {
+      chatLog.value.push({
+        id: Date.now() + 2,
+        role: "bot",
+        text: "API余额耗尽了，去b站提醒我充钱吧",
+        isError: true,
+      });
+    } else {
+      chatLog.value.push({
+        id: Date.now() + 1,
+        role: "bot",
+        text: botReply,
+      });
+    }
 
-  
     // —— 彩蛋结束 ——
   } catch (e) {
     console.error(e);
-    chatLog.value.push({
-      id: Date.now() + 2,
-      role: "bot",
-      text: "API余额耗尽了，去b站提醒我充钱吧",
-      isError: true,
-    });
   } finally {
     loading.value = false;
     await scrollToBottom();
